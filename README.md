@@ -89,6 +89,23 @@ Scanners that report both as the same severity train you to ignore them.
 bash aws-baseline-audit.sh --all-regions --json | jq '.findings[] | select(.severity=="CRITICAL")'
 ```
 
+## How this was tested
+
+Static checks do not catch the interesting failures, so this script was not shipped on a
+clean ShellCheck run alone.
+
+Every finding branch was verified against a **deliberately misconfigured load balancer**
+built on live AWS: an HTTP listener forwarding instead of redirecting, `ELBSecurityPolicy-2016-08`
+(which still permits TLS 1.0), `drop_invalid_header_fields` off, desync mitigation set to
+`monitor`, no WAF association, no access logging. All seven checks fired correctly, at the
+right severities. Then it was torn down.
+
+The attached-versus-orphaned severity split was verified the same way, against a real
+security group with SSH open to the world.
+
+CI runs ShellCheck on every push, pinned to a fixed version — 0.9 and 0.11 disagree, and an
+unpinned runner will fail a build that passes on your machine.
+
 ## Requirements
 
 AWS CLI v2, `jq`, and `bash` 3.2 or newer — stock macOS bash works. Read permissions
@@ -97,9 +114,17 @@ section to be skipped, not the run to fail.
 
 ## Why this exists
 
-I wrote a toolkit for hardening AWS infrastructure, then deployed it to a real account
-to check it worked. It didn't, in six different ways — including a retrofit script that
-took a load balancer completely offline while printing "complete" and exiting 0.
+I wrote a toolkit for hardening AWS infrastructure, then deployed it to a real account to
+check it worked. It didn't, in eleven different ways.
+
+The worst: a script meant to retrofit hardening onto an existing load balancer. Against
+an HTTP-only ALB it rewrote port 80 into a redirect, created an HTTPS listener whose
+default action was `403`, and never carried the target group across to either. A request
+on the one hostname I had explicitly allowed got a 403. The target group was orphaned.
+
+It printed `ALB hardening complete` and exited 0.
+
+**→ [The full writeup: how a script that passed every lint check caused an outage](docs/the-outage.md)**
 
 This audit script is the read-only part of that toolkit, extracted and given away,
 because finding out what is actually wrong should not cost anything.
