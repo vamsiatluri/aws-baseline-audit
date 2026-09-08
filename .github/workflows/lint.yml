@@ -13,9 +13,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Pinned: shellcheck 0.9 and 0.11 disagree (0.9 flags SC2015 where 0.11
+      # does not), so an unpinned runner can fail a build that passes locally.
       - name: ShellCheck
-        run: |
-          sudo apt-get update && sudo apt-get install -y shellcheck
-          shellcheck -s bash aws-baseline-audit.sh
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: '.'
+          severity: style
       - name: Syntax check under bash 3.2 semantics
         run: bash -n aws-baseline-audit.sh

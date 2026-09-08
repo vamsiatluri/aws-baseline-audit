@@ -94,7 +94,7 @@ if [[ -t 1 && "$FORMAT" == "text" ]]; then
   C_RED=$'\033[31m'; C_YEL=$'\033[33m'; C_GRN=$'\033[32m'; C_DIM=$'\033[2m'; C_OFF=$'\033[0m'
 fi
 
-say() { [[ "$FORMAT" == "text" ]] && echo "$@" || true; }
+say() { if [[ "$FORMAT" == "text" ]]; then echo "$@"; fi; }
 
 # ---------------------------------------------------------------------------
 # Load balancers
