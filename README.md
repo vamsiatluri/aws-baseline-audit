@@ -144,10 +144,13 @@ baseline, plus the scripts that *fix* what this finds — is
 | `public-admin-port` | Revoke the rule and move administration to SSM Session Manager. |
 | `ssm-coverage` | Attach an instance profile with `AmazonSSMManagedInstanceCore`, and make sure private subnets can reach the SSM endpoints. |
 
-All of these are automated, with dry-run support and rollback notes, in
-**V's AWS Hardening Kit** — 14 CloudFormation templates, 14 Terraform modules, 9 scripts
-and 25 how-to guides, every one of them deployed to a live AWS account and exercised
-before release.
+All of these are automated in **V's AWS Hardening Kit** — 14 CloudFormation templates,
+14 Terraform modules, 8 scripts and 25 how-to guides, every one of them deployed to a live
+AWS account and exercised before release.
+
+The remediation scripts plan before they apply, and take their exit code from probing the
+result rather than from the AWS calls returning 200 — an allowed host must still be served,
+an unknown one must not. If that probe fails, the change is rolled back automatically.
 
 *Launching shortly. Watch this repo to hear about it.*
 
