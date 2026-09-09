@@ -146,7 +146,54 @@ Hardening would set the HTTPS default action to 403 with nothing forwarding
 traffic, which would take the application offline. No changes have been made.
 ```
 
-Plus a `--dry-run` flag, which is what I should have written first.
+Plus a `--dry-run` flag.
+
+## What three strangers changed
+
+I posted this writeup to r/devops. Three people read it and pointed out, between them, that
+the fix above was still wrong — not incorrect, but far too small. Everything in this section
+came from them.
+
+**The exit code should come from probing the invariant, not from the mutations succeeding.**
+Refusing to proceed when no target group is found prevents *this* bug and nothing adjacent to
+it; it still reasons about inputs. The script now curls the load balancer after applying — the
+allowed host must not get 403, an unknown host must, HTTP must redirect — and takes its exit
+code from that. If the probe fails it restores the previous default action automatically, which
+turns the original outage into roughly a forty-second blip that exits 1.
+
+Then I checked every other mutating script I had written. All of them had the same defect:
+revoke a security group rule and print "complete", update a launch template and never confirm
+the default version moved. An API returning 200 proves the control plane accepted the request.
+It proves nothing about the system.
+
+**Any lookup that can legally return empty is a hard failure, not a warning.** Mine printed
+`WARNING: No default forward target group found` one line before it made the outage permanent,
+then exited 0. The warning was real, correctly worded, and completely inert.
+
+**`--dry-run` was not a plan.** It printed the AWS CLI calls it would make, interleaved with
+discovery, as it went. That is a change log. It could not tell you what was *already correct*,
+and it could not be read before it ran. There is a real plan/apply split now: discover, build
+the whole change set, print it, then apply. The plan describes end state, so re-planning an
+already-hardened load balancer reports zero changes and doubles as a drift check. A saved plan
+is re-validated against live state before it is applied and refused if anything moved — a plan
+written an hour ago can name a target group that has since been repointed, which is this same
+ordering bug one level up.
+
+**A probe only proves the shape you happen to run it against.** I had tested the shape that
+broke me and an already-hardened one. The shape I had never built a fixture for was a load
+balancer that already terminates TLS with a forward default — the most common retrofit target
+of the three. I had checked that path by reading the code, which is the same class of mistake
+as checking by reading the exit code. There is a harness now: five shapes stood up in a
+throwaway VPC, the real tool run against each, end state asserted.
+
+That harness leaked five load balancers on its first run and reported a clean teardown. It
+collected the ARNs inside `$(...)`, which is a subshell, so the arrays were empty in the parent
+and the cleanup loop iterated over nothing while printing `done`. The same defect this entire
+page is about, in the tool written to catch it. It now re-queries the VPC and fails loudly if
+it is still there.
+
+Posting a specific failure in public got me three competent reviewers in a day. The feedback
+was better than the original fix.
 
 Re-running against the same HTTP-only load balancer now:
 
