@@ -236,4 +236,47 @@ The first time I ran it against my own account it found a security group tagged
 `production` with SSH open to `0.0.0.0/0`. Unattached, so not a live exposure. Still not
 something I knew about.
 
+## Then I stopped testing whether it worked
+
+Everything above — including the three fixes the r/devops reviewers prompted — was still
+me checking that the tools did the right thing. So I spent a day trying to make them lie
+instead, and found **nine more defects. Two of them were inside the fixes I had shipped
+that same morning.**
+
+**The one that stung.** An hour after writing a fix, I handed the script a malformed
+security-group id. The AWS call failed, and the script printed *"Nothing to revoke"* and
+exited 0. The read sat inside a process substitution:
+
+```bash
+while read -r id; do ...; done < <(aws ec2 describe-security-group-rules ... | jq -r ...)
+```
+
+`set -e` does not check the exit status of a process substitution. The query errored, the
+loop ran zero times, and the script reported a clean group. A clean bill of health,
+produced by an error — the same defect as the outage, in the code written to fix the
+outage.
+
+**The one a customer would have hit first.** The audit script in the private half selected
+every rule admitting port 22 from *any* source, then called each attached one a public
+exposure. A bastion allowing SSH from `10.0.0.0/8` — the correct pattern, and among the
+most common configurations in AWS — came back `CRITICAL`, and `--strict` failed the build
+on it. I built that fixture deliberately to check:
+
+| | verdict | `--strict` exit |
+|---|---|---|
+| before | `CRITICAL: 1 security group(s) expose SSH/RDP publicly` | **1** |
+| after | `No attached security group exposes SSH/RDP to 0.0.0.0/0 or ::/0` | **0** |
+
+**The tool in this repo never had that bug.** It has filtered for `0.0.0.0/0` and `::/0`
+since its first commit. The paid one had it.
+
+Seven generalisations came out of that pass. The one worth carrying away:
+
+> Your verification must not be built out of the thing it verifies.
+
+That script was checking its work by re-running the same filter it had used to choose what
+to change. If the selection is wrong, the check is wrong in the identical direction and
+prints "verified". An oracle assembled from the actuator's own logic can only ever confirm
+that the actuator ran.
+
 ← [Back to the README](../README.md)
