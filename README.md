@@ -152,7 +152,18 @@ The remediation scripts plan before they apply, and take their exit code from pr
 result rather than from the AWS calls returning 200 — an allowed host must still be served,
 an unknown one must not. If that probe fails, the change is rolled back automatically.
 
-*Launching shortly. Watch this repo to hear about it.*
+That standard was not arrived at cleanly. [The outage writeup](docs/the-outage.md) is the
+honest account: eleven defects found by deploying my own templates, three more after
+r/devops took the first version apart, and then nine more after I stopped testing whether
+the tools worked and started trying to make them lie — two of which were inside the fixes
+I had shipped that same morning.
+
+**$149** — one developer, both editions, all 25 guides, and every update.
+
+### → [Get V's AWS Hardening Kit](https://buy.polar.sh/polar_cl_jGgPOVomjLFaKbhtmpMMHaxoywwan9TpAeGT52hUFsX)
+
+Delivered as access to the private GitHub repository. Payment handled by Polar, which acts
+as merchant of record. Questions before buying: open an issue on this repo.
 
 ## License
 
