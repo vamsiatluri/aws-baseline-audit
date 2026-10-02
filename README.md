@@ -103,6 +103,10 @@ right severities. Then it was torn down.
 The attached-versus-orphaned severity split was verified the same way, against a real
 security group with SSH open to the world.
 
+The same standard applies to the paid kit, and the evidence is public:
+**→ [Validation report](VALIDATION.md)** — every stack deployed, every functional check, and the
+eleven defects that round found in my own templates.
+
 CI runs ShellCheck on every push, pinned to a fixed version — 0.9 and 0.11 disagree, and an
 unpinned runner will fail a build that passes on your machine.
 
@@ -157,6 +161,11 @@ honest account: eleven defects found by deploying my own templates, three more a
 r/devops took the first version apart, and then nine more after I stopped testing whether
 the tools worked and started trying to make them lie — two of which were inside the fixes
 I had shipped that same morning.
+
+**Read the evidence before you buy it:
+[the full validation report](VALIDATION.md)** is public — nine stacks deployed, seven ALB
+functional checks, 50 Terraform resources applied and destroyed, and every defect the exercise
+found in my own code, including the one that took an application offline while exiting 0.
 
 **$149** — one developer, both editions, all 25 guides, and every update.
 
